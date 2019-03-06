@@ -14,3 +14,7 @@ action "Fetch asset" {
 }
 ```
 
+## Credits
+
+- https://gist.github.com/maxim/6e15aa45ba010ab030c4
+- https://github.com/JasonEtco/upload-to-release
