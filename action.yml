@@ -1,0 +1,15 @@
+name: 'download-gh-release-asset'
+description: 'Download an asset from the github release'
+inputs:
+  file:
+    description: 'File to download'
+    required: true
+  release_tag:
+    description: 'Release tag where the file is located. Default is current'
+    required: false
+  repository:
+    description: 'Repository to download the file from. Default is current'
+    required: false
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

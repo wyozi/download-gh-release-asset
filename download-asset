@@ -9,26 +9,42 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
   exit 1
 fi
 
+FILE=${INPUT_FILE}
+REPOSITORY=${INPUT_REPOSITORY}
+RELEASE_TAG=${INPUT_RELEASE_TAG}
+GITHUB="https://api.github.com"
+AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
+
 # Ensure that the file path is present
-if [[ -z "$1" ]]; then
+if [[ -z "$FILE" ]]; then
   echo "Pass the name of the asset to download"
   exit 1
 fi
 
-FILE="$1"
+# Repository to use, if not set == current repository
+if [[ -z "$REPOSITORY" ]]; then
+  REPOSITORY=${GITHUB_REPOSITORY}
+fi
 
-asset_id=$(jq ".release.assets | map(select(.name == \"$FILE\"))[0].id" $GITHUB_EVENT_PATH)
+# Release tag to use, if not set == latest
+if [[ -z "$RELEASE_TAG" ]]; then
+  # Github should return the latest release first.
+  parser=".[0].assets | map(select(.name == \"$FILE\"))[0].id"
+else
+  parser=". | map(select(.tag_name == \"$RELEASE_TAG\"))[0].assets | map(select(.name == \"$FILE\"))[0].id"
+fi;
+
+asset_id=`curl -H "${AUTH_HEADER}" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -s $GITHUB/repos/$REPOSITORY/releases | jq "$parser"`
 if [ "$asset_id" = "null" ]; then
   echo "ERROR: asset id not found"
   exit 1
 fi;
-
-AUTH_HEADER="Authorization: token ${GITHUB_TOKEN}"
-ASSET_URL="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}"
 
 curl \
   -L \
   -H "${AUTH_HEADER}" \
   -H "Accept:application/octet-stream" \
   -o "${FILE}" \
-  "${ASSET_URL}"
+  "${GITHUB}/repos/${REPOSITORY}/releases/assets/${asset_id}"
